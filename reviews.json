@@ -1,0 +1,21 @@
+{ "nodes":[
+    {"id":"audible", "color": "blue", "radius": 10 ,  "touches": 4},
+    {"id":"is", "color": "purple", "radius": 20 , "touches": 1.5},
+    {"id":"awesome", "color": "blue", "radius": 10,"touches": 1.5},
+    {"id":"manager", "color": "red", "radius": 10, "touches": 1.5 },
+    {"id":"bad", "color": "red", "radius": 20, "touches": 1.5},
+    {"id":"food", "color": "red", "radius": 10, "touches": 1.5},
+    {"id":"tight", "color": "green", "radius": 20, "touches": 1.5},
+    {"id":"community", "color": "green", "radius": 10, "touches": 1.5}
+  ],
+
+  "links":[
+    {"source": "audible", "target": "is"},
+    {"source": "is" ,"target": "awesome"},
+    {"source": "manager", "target": "is"},
+    {"source": "is" ,"target": "bad"},
+    {"source": "is", "target": "bad"},
+    {"source": "food", "target": "is"},
+    {"source": "tight", "target": "community"}
+  ]
+}

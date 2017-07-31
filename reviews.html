@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<style>
+    .node {
+      stroke: #000;
+      stroke-width: 1.5px;
+    }
+
+    .link {
+      stroke: #999;
+      stroke-width: 1.5px;
+    }
+
+    .text{
+       font-family : "helvetica";
+       font-size: "12px";
+    }
+
+</style>
+
+<body>
+<script src="https://d3js.org/d3.v4.js"></script>
+<script>
+
+    var bodySelection = d3.select("body");
+    var width  = 900, height = 900;
+    //Create the SVG Viewport
+    var svgContainer = bodySelection.append("svg").attr("width",width).attr("height",height);
+
+    var simulation = d3.forceSimulation()
+                    .force("charge", d3.forceManyBody().strength(-200))
+                    .force('center', d3.forceCenter(width / 2, height / 2)) //To center svgContainer
+                    .force("link", d3.forceLink().id(function(d) { return d.id; }).distance(70))
+                    .on("tick", ticked);
+
+    var link = svgContainer.selectAll(".link"),
+        node = svgContainer.selectAll(".node"),
+        marker = svgContainer.selectAll(".marker"),
+        text = svgContainer.selectAll(".text");
+
+    d3.json("reviews.json", function(error, reviews){
+              if (error) throw error;
+
+              simulation.nodes(reviews.nodes);
+              simulation.force("link").links(reviews.links); //Link nodes
+
+              //Draw Arrow Markers
+              svgContainer.append("defs").append("marker")
+                    .attr("id","arrowhead")
+                    .attr("viewBox", "-0 -5 10 10")
+                    .attr("refX", 17)
+                    .attr("refY", 0)
+                    .attr("orient", "auto")
+                    .attr("markerWidth",12)
+                    .attr("markerHeight", 12)
+                    .append("svg:path")
+                    .attr("d", "M 0,-5 L 10 ,0 L 0,5")
+                    .attr("fill", "#999");
+
+              link = link.data(reviews.links).enter().append("line").attr("class","link").attr("marker-end","url(#arrowhead)");
+
+              node = node.data(reviews.nodes).enter().append("circle")
+                      .attr("class","node")
+                      .attr("r", function (d){return d.radius;})
+                      .style("fill", function(d){return d.color;})
+                      .style("stroke-width",function (d){ return d.touches;})
+                      .call(d3.drag().on("drag", dragged));
+
+              text = text.data(reviews.nodes).enter().append("text")
+                    .attr("class","text")
+                    .attr("text-anchor", "middle")
+                    .text(function(d){ return d.id; });
+      });
+
+//Helper Methods
+    function ticked() {
+          link.attr("x1", function(d) { return d.source.x; })
+              .attr("y1", function(d) { return d.source.y; })
+              .attr("x2", function(d) { return d.target.x; })
+              .attr("y2", function(d) { return d.target.y; });
+
+          node.attr("cx", function(d) { return d.x; })
+              .attr("cy", function(d) { return d.y; });
+
+          text.attr("x", function(d){ return d.x; })
+              .attr("y", function(d){ return d.y; });
+
+    }
+
+    //Drag functionality
+    function dragged(d){
+          node
+              .attr("cx", d.x = d3.event.x)
+              .attr("cy", d.y = d3.event.y);
+          ticked();
+     }
+
+</script>
