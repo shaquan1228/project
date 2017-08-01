@@ -1,5 +1,8 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
+<script src="https://d3js.org/d3.v4.js"></script>
+<script src="http://code.jquery.com/jquery-1.9.1.js"></script>
+<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
 
 <style>
     .node {
@@ -17,20 +20,32 @@
        font-size: "12px";
     }
 
+    #search{
+        position:relative;
+        top: 10%;
+        left:40%;
+        margin: auto;
+    }
+    .ui-helper-hidden-accessible { display:none; }
 </style>
 
 <body>
-<script src="https://d3js.org/d3.v4.js"></script>
-<script>
+  <!--This is wheer the search bar is.-->
+  <div class="ui-widget">
+      <input id="search">
+      <button id = "search" type="button" onclick="searchNode()">Search</button>
+  </div>
 
+
+<script>
     var bodySelection = d3.select("body");
     var width  = 900, height = 900;
     //Create the SVG Viewport
     var svgContainer = bodySelection.append("svg").attr("width",width).attr("height",height);
 
     var simulation = d3.forceSimulation()
-                    .force("charge", d3.forceManyBody().strength(-200))
-                    .force('center', d3.forceCenter(width / 2, height / 2)) //To center svgContainer
+                    .force("charge", d3.forceManyBody().strength(-150))
+                    .force("center", d3.forceCenter(width / 2, height / 2)) //To center svgContainer
                     .force("link", d3.forceLink().id(function(d) { return d.id; }).distance(70))
                     .on("tick", ticked);
 
@@ -38,9 +53,11 @@
         node = svgContainer.selectAll(".node"),
         marker = svgContainer.selectAll(".marker"),
         text = svgContainer.selectAll(".text");
+    var optArray = [], optArray2 = [];
 
     d3.json("reviews.json", function(error, reviews){
               if (error) throw error;
+
 
               simulation.nodes(reviews.nodes);
               simulation.force("link").links(reviews.links); //Link nodes
@@ -49,7 +66,7 @@
               svgContainer.append("defs").append("marker")
                     .attr("id","arrowhead")
                     .attr("viewBox", "-0 -5 10 10")
-                    .attr("refX", 17)
+                    .attr("refX", 15.5)
                     .attr("refY", 0)
                     .attr("orient", "auto")
                     .attr("markerWidth",12)
@@ -65,35 +82,82 @@
                       .attr("r", function (d){return d.radius;})
                       .style("fill", function(d){return d.color;})
                       .style("stroke-width",function (d){ return d.touches;})
-                      .call(d3.drag().on("drag", dragged));
+                      .call(d3.drag()
+                    //  .on("start", dragStart)
+                      .on("drag", dragged));
+                  //    .on("end", dragEnd));
 
               text = text.data(reviews.nodes).enter().append("text")
                     .attr("class","text")
                     .attr("text-anchor", "middle")
                     .text(function(d){ return d.id; });
+
+            for (var i = 0; i < reviews.nodes.length - 1; i++) {
+                optArray.push(reviews.nodes[i].id);
+            }
+            for (var i = 0; i < reviews.links.length - 1; i++) {
+                optArray2.push(reviews.links[i].target);
+            }
       });
 
-//Helper Methods
-    function ticked() {
-          link.attr("x1", function(d) { return d.source.x; })
-              .attr("y1", function(d) { return d.source.y; })
-              .attr("x2", function(d) { return d.target.x; })
-              .attr("y2", function(d) { return d.target.y; });
+     optArray = optArray.sort();
+     optArray2 = optArray2.sort();
 
-          node.attr("cx", function(d) { return d.x; })
-              .attr("cy", function(d) { return d.y; });
+     $(function () {
+         $("#search").autocomplete({
+             source: optArray
+         });
+     });
+//Endpoints are the same color to indicate what is where
 
-          text.attr("x", function(d){ return d.x; })
-              .attr("y", function(d){ return d.y; });
+     //Helper Methods
+         function ticked() {
+               link.attr("x1", function(d) { return d.source.x; })
+                   .attr("y1", function(d) { return d.source.y; })
+                   .attr("x2", function(d) { return d.target.x; })
+                   .attr("y2", function(d) { return d.target.y; });
 
-    }
+               node.attr("cx", function(d) { return d.x; })
+                   .attr("cy", function(d) { return d.y; });
 
-    //Drag functionality
-    function dragged(d){
-          node
-              .attr("cx", d.x = d3.event.x)
-              .attr("cy", d.y = d3.event.y);
-          ticked();
-     }
+
+               text.attr("x", function(d){ return d.x; })
+                   .attr("y", function(d){ return d.y; });
+
+         }
+
+         //Drag functionality
+         function dragged(d){
+               node
+                   .attr("cx", d.x = d3.event.x)
+                   .attr("cy", d.y = d3.event.y);
+               ticked();
+          }
+
+          function searchNode() {
+
+                //find the node
+
+                var selectedVal = document.getElementById("search").value;
+
+                if (selectedVal == "none") {
+                    node.style("stroke", "white").style("stroke-width", "1");
+                } else {
+                    var selected = node.filter(function (d, i) {
+                        return d.id != selectedVal;
+                    });
+                    //Selected holds all of the nodes that do not have the selectedVal
+                    console.log(selected);
+                    selected.style("opacity", "0");
+                    link.style("opacity", "0");
+                    d3.selectAll(".node, .link").transition()
+                        .duration(5000)
+                        .style("opacity", 1);
+
+                      }
+      }
 
 </script>
+
+</body>
+</html>
