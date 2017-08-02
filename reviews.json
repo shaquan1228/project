@@ -1,21 +1,20 @@
 { "nodes":[
-    {"id":"audible", "color": "blue", "radius": 10 ,  "touches": 4},
-    {"id":"is", "color": "purple", "radius": 20 , "touches": 1.5},
-    {"id":"awesome", "color": "blue", "radius": 10,"touches": 1.5},
-    {"id":"manager", "color": "red", "radius": 10, "touches": 1.5 },
-    {"id":"bad", "color": "red", "radius": 20, "touches": 1.5},
-    {"id":"food", "color": "red", "radius": 10, "touches": 1.5},
-    {"id":"tight", "color": "green", "radius": 20, "touches": 1.5},
-    {"id":"community", "color": "green", "radius": 10, "touches": 1.5}
+    {"id":"audible", "color": "blue", "radius": 10, "group": [0 ]},
+    {"id":"is", "color": "purple", "radius": 20, "group": [0,1,2 ] },
+    {"id":"awesome", "color": "blue", "radius": 10, "group": [0 ]},
+    {"id":"manager", "color": "red", "radius": 10, "group": [1]},
+    {"id":"bad", "color": "red", "radius": 20, "group": [1,2] },
+    {"id":"food", "color": "red", "radius": 10, "group": [2 ]},
+    {"id":"tight", "color": "green", "radius": 20, "group": [3]},
+    {"id":"community", "color": "green", "radius": 10, "group": [3]}
   ],
 
   "links":[
-    {"source": "audible", "target": "is"},
-    {"source": "is" ,"target": "awesome"},
-    {"source": "manager", "target": "is"},
-    {"source": "is" ,"target": "bad"},
-    {"source": "is", "target": "bad"},
-    {"source": "food", "target": "is"},
-    {"source": "tight", "target": "community"}
+    {"source": "audible", "target": "is", "touches":4},
+    {"source": "is" ,"target": "awesome", "touches":1.5},
+    {"source": "manager", "target": "is", "touches":1.5},
+    {"source": "is" ,"target": "bad", "touches": 1.5},
+    {"source": "food", "target": "is", "touches": 1.5},
+    {"source": "tight", "target": "community", "touches": 1.5}
   ]
 }

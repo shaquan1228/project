@@ -30,7 +30,7 @@
 </style>
 
 <body>
-  <!--This is wheer the search bar is.-->
+  <!--This is where the search bar is.-->
   <div class="ui-widget">
       <input id="search">
       <button id = "search" type="button" onclick="searchNode()">Search</button>
@@ -53,7 +53,7 @@
         node = svgContainer.selectAll(".node"),
         marker = svgContainer.selectAll(".marker"),
         text = svgContainer.selectAll(".text");
-    var optArray = [], optArray2 = [];
+    var optArray = [];
 
     d3.json("reviews.json", function(error, reviews){
               if (error) throw error;
@@ -81,34 +81,29 @@
                       .attr("class","node")
                       .attr("r", function (d){return d.radius;})
                       .style("fill", function(d){return d.color;})
-                      .style("stroke-width",function (d){ return d.touches;})
-                      .call(d3.drag()
-                    //  .on("start", dragStart)
-                      .on("drag", dragged));
-                  //    .on("end", dragEnd));
+                      .style("stroke-width", 1.5)
+                    //  .style("stroke-width",function (d){ return d.touches;})
+                      .call(d3.drag().on("drag", dragged));
 
               text = text.data(reviews.nodes).enter().append("text")
                     .attr("class","text")
                     .attr("text-anchor", "middle")
                     .text(function(d){ return d.id; });
 
-            for (var i = 0; i < reviews.nodes.length - 1; i++) {
-                optArray.push(reviews.nodes[i].id);
-            }
+
             for (var i = 0; i < reviews.links.length - 1; i++) {
-                optArray2.push(reviews.links[i].target);
+                optArray.push(reviews.links[i].target);
             }
       });
 
      optArray = optArray.sort();
-     optArray2 = optArray2.sort();
 
+     //JQuery for search function
      $(function () {
          $("#search").autocomplete({
              source: optArray
          });
      });
-//Endpoints are the same color to indicate what is where
 
      //Helper Methods
          function ticked() {
@@ -119,7 +114,6 @@
 
                node.attr("cx", function(d) { return d.x; })
                    .attr("cy", function(d) { return d.y; });
-
 
                text.attr("x", function(d){ return d.x; })
                    .attr("y", function(d){ return d.y; });
@@ -136,25 +130,55 @@
 
           function searchNode() {
 
-                //find the node
-
+                //Find the value of the search input
                 var selectedVal = document.getElementById("search").value;
+                //Filter through node. Filter holds objects that aren't touched by the input word
+              /*  var filter =  link.filter(function( d,i){
+                    if(  (d.target.id != selectedVal) && (d.source.id != selectedVal)) {
+                      return d;
+                    }
+                });
+                filter.style("opacity", "0"); //Make other lines disappear
+                //Filter2 holds objects that are touched by the input word
+                var filter2 =  link.filter(function( d,i){
+                    if(  (d.target.id == selectedVal) || (d.source.id == selectedVal)) {
+                      return d;
+                    }
+                });
+                filter2.style("stroke", "orange"); //Make the touched lines orange
+                d3.selectAll(".node, .link").transition()
+                    .duration(5000) //After this time frame, we will restore all nodes back to how they used to look.
+                    .style("opacity", 1)
+                    .style("stroke", "#999");
 
-                if (selectedVal == "none") {
-                    node.style("stroke", "white").style("stroke-width", "1");
-                } else {
-                    var selected = node.filter(function (d, i) {
-                        return d.id != selectedVal;
-                    });
-                    //Selected holds all of the nodes that do not have the selectedVal
-                    console.log(selected);
-                    selected.style("opacity", "0");
-                    link.style("opacity", "0");
-                    d3.selectAll(".node, .link").transition()
-                        .duration(5000)
-                        .style("opacity", 1);
+              */
+              var objectCheck; //objectCheck holds the group attribute for the inputted node
+              var filter =  node.filter(function( d,i){
+                    if(  (d.id == selectedVal)) {
+                        objectCheck = d.group;
+                    }
+                });
+        //CURRENTLY... OBJ DOES HOLD THE VARIABLE THAT IS SUPPOSED TO BE FILTERED, IT JUST ISNT BEING ADDED TO FILTER2
+               var filter2 =  node.filter(function( d,i){
+                      var obj = d;
+                      (d.group).forEach( function(d){
+                        if( !(d in objectCheck)){
+                            console.log(obj);
+                            return obj;
+                        }
+                      });
+                });
+                    console.log(filter2);
+              filter2.style("opacity", "0"); //Make other lines disappear
+              //  filter2.style("stroke", "orange"); //Make the touched lines orange
+                d3.selectAll(".node, .link").transition()
+                    .duration(5000) //After this time frame, we will restore all nodes back to how they used to look.
+                    .style("opacity", 1)
+                    .style("stroke", "#999");
 
-                      }
+
+
+
       }
 
 </script>
