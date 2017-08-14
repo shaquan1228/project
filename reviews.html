@@ -3,67 +3,78 @@
 <script src="https://d3js.org/d3.v4.js"></script>
 <script src="http://code.jquery.com/jquery-1.9.1.js"></script>
 <script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
 
 <style>
-    .node {
+    .nodes {
       stroke: #000;
       stroke-width: 1.5px;
     }
 
-    .link {
+    .links{
       stroke: #999;
       stroke-width: 1.5px;
     }
 
-    .text{
+    .texts{
        font-family : "helvetica";
-       font-size: "12px";
-    }
-
-    #search{
-        position:relative;
-        top: 10%;
-        left:40%;
-        margin: auto;
+       font-size: "10px";
     }
     .ui-helper-hidden-accessible { display:none; }
+
+    .customInput{
+      position:relative;
+      top: 10%;
+      left:40%;
+      margin: auto;
+    }
+
+    .customInput button{
+      top: 10%;
+      left:40%;
+      margin: auto;
+    }
 </style>
 
 <body>
   <!--This is where the search bar is.-->
-  <div class="ui-widget">
-      <input id="search">
-      <button id = "search" type="button" onclick="searchNode()">Search</button>
+  <div class="customInput" >
+      <input id="searchInput" onkeyup="searchNodes()">
+      <button class="btn-primary"type="button" onclick="searchNodes()">Search</button>
+      <button type="button" onclick="clearSearch()">Clear</button>
   </div>
 
+  <div id="graphContainer">
+  </div>
 
 <script>
-    var bodySelection = d3.select("body");
-    var width  = 900, height = 900;
+    var bodySelection = d3.select("#graphContainer");
     //Create the SVG Viewport
-    var svgContainer = bodySelection.append("svg").attr("width",width).attr("height",height);
+    var svgContainer = bodySelection.append("svg").attr("width",innerWidth).attr("height",innerHeight);
 
     var simulation = d3.forceSimulation()
-                    .force("charge", d3.forceManyBody().strength(-150))
-                    .force("center", d3.forceCenter(width / 2, height / 2)) //To center svgContainer
-                    .force("link", d3.forceLink().id(function(d) { return d.id; }).distance(70))
+                    .force("charge", d3.forceManyBody())
+                    .force("center", d3.forceCenter(innerWidth / 2, innerHeight/ 4)) //To center svgContainer
+                    .force("links", d3.forceLink().id(function(d) { return d.id; }).distance(80))
                     .on("tick", ticked);
 
-    var link = svgContainer.selectAll(".link"),
-        node = svgContainer.selectAll(".node"),
-        marker = svgContainer.selectAll(".marker"),
-        text = svgContainer.selectAll(".text");
+    var links = svgContainer.selectAll(".links"),
+        nodes = svgContainer.selectAll(".nodes"),
+        markers = svgContainer.selectAll(".markers"),
+        texts = svgContainer.selectAll(".texts");
     var optArray = [];
+    var color = d3.scaleOrdinal(d3.schemeCategory10).domain(d3.range(0, 9));
 
     d3.json("reviews.json", function(error, reviews){
               if (error) throw error;
 
 
               simulation.nodes(reviews.nodes);
-              simulation.force("link").links(reviews.links); //Link nodes
+              simulation.force("links").links(reviews.links); //links nodes
 
               //Draw Arrow Markers
-              svgContainer.append("defs").append("marker")
+               markers = svgContainer.append("defs").append("marker")
                     .attr("id","arrowhead")
                     .attr("viewBox", "-0 -5 10 10")
                     .attr("refX", 15.5)
@@ -72,114 +83,114 @@
                     .attr("markerWidth",12)
                     .attr("markerHeight", 12)
                     .append("svg:path")
+                    .attr("class",".markers")
                     .attr("d", "M 0,-5 L 10 ,0 L 0,5")
                     .attr("fill", "#999");
 
-              link = link.data(reviews.links).enter().append("line").attr("class","link").attr("marker-end","url(#arrowhead)");
+              links = links.data(reviews.links).enter().append("line")
+              .attr("class","links")
+              .style("stroke-width",function (d){ return d.touches;})
+              .attr("marker-end","url(#arrowhead)");
 
-              node = node.data(reviews.nodes).enter().append("circle")
-                      .attr("class","node")
+              nodes = nodes.data(reviews.nodes).enter().append("circle")
+                      .attr("class","nodes")
                       .attr("r", function (d){return d.radius;})
-                      .style("fill", function(d){return d.color;})
+                      .style("fill", function(d,i){return color(d.group[0]);})//d.color
                       .style("stroke-width", 1.5)
-                    //  .style("stroke-width",function (d){ return d.touches;})
                       .call(d3.drag().on("drag", dragged));
 
-              text = text.data(reviews.nodes).enter().append("text")
-                    .attr("class","text")
+              texts = texts.data(reviews.nodes).enter().append("text")
+                    .attr("class","texts")
                     .attr("text-anchor", "middle")
+                    .attr("font-weight","bold")
                     .text(function(d){ return d.id; });
 
+              for (var i = 0; i < reviews.nodes.length; i++) {
+                  optArray.push(reviews.nodes[i].id);
+              }
 
-            for (var i = 0; i < reviews.links.length - 1; i++) {
-                optArray.push(reviews.links[i].target);
-            }
       });
 
      optArray = optArray.sort();
 
-     //JQuery for search function
-     $(function () {
-         $("#search").autocomplete({
-             source: optArray
-         });
-     });
-
      //Helper Methods
          function ticked() {
-               link.attr("x1", function(d) { return d.source.x; })
+               links.attr("x1", function(d) { return d.source.x; })
                    .attr("y1", function(d) { return d.source.y; })
                    .attr("x2", function(d) { return d.target.x; })
                    .attr("y2", function(d) { return d.target.y; });
 
-               node.attr("cx", function(d) { return d.x; })
+               nodes.attr("cx", function(d) { return d.x; })
                    .attr("cy", function(d) { return d.y; });
 
-               text.attr("x", function(d){ return d.x; })
-                   .attr("y", function(d){ return d.y; });
+               texts.attr("x", function(d){ return d.x; })
+                    .attr("y", function(d){ return d.y; });
 
+              simulation.alphaTarget(0.3).restart();
          }
 
          //Drag functionality
          function dragged(d){
-               node
-                   .attr("cx", d.x = d3.event.x)
-                   .attr("cy", d.y = d3.event.y);
+               nodes
+                 .attr("cx", d.x = d3.event.x)
+                 .attr("cy", d.y = d3.event.y);
                ticked();
           }
 
-          function searchNode() {
+
+          function searchNodes() {
 
                 //Find the value of the search input
-                var selectedVal = document.getElementById("search").value;
-                //Filter through node. Filter holds objects that aren't touched by the input word
-              /*  var filter =  link.filter(function( d,i){
-                    if(  (d.target.id != selectedVal) && (d.source.id != selectedVal)) {
-                      return d;
+                var selectedVal = document.getElementById("searchInput").value;
+                console.log("searchNodes::" + selectedVal);
+                console.log("EVENT::" + event.key);
+
+                var group_attributes = []; //objectCheck holds the group attribute for the inputted nodes
+                nodes.each(function(node){
+                    if( ((node.id).startsWith(selectedVal))) { //for dynamic input checking, use startsWith() function instead of ==
+                        group_attributes.push( node.group );
                     }
                 });
-                filter.style("opacity", "0"); //Make other lines disappear
-                //Filter2 holds objects that are touched by the input word
-                var filter2 =  link.filter(function( d,i){
-                    if(  (d.target.id == selectedVal) || (d.source.id == selectedVal)) {
-                      return d;
-                    }
-                });
-                filter2.style("stroke", "orange"); //Make the touched lines orange
-                d3.selectAll(".node, .link").transition()
-                    .duration(5000) //After this time frame, we will restore all nodes back to how they used to look.
-                    .style("opacity", 1)
-                    .style("stroke", "#999");
+                group_attributes = [].concat.apply([], group_attributes); //Flatten array
 
-              */
-              var objectCheck; //objectCheck holds the group attribute for the inputted node
-              var filter =  node.filter(function( d,i){
-                    if(  (d.id == selectedVal)) {
-                        objectCheck = d.group;
-                    }
-                });
-        //CURRENTLY... OBJ DOES HOLD THE VARIABLE THAT IS SUPPOSED TO BE FILTERED, IT JUST ISNT BEING ADDED TO FILTER2
-               var filter2 =  node.filter(function( d,i){
-                      var obj = d;
-                      (d.group).forEach( function(d){
-                        if( !(d in objectCheck)){
-                            console.log(obj);
-                            return obj;
-                        }
-                      });
-                });
-                    console.log(filter2);
-              filter2.style("opacity", "0"); //Make other lines disappear
-              //  filter2.style("stroke", "orange"); //Make the touched lines orange
-                d3.selectAll(".node, .link").transition()
-                    .duration(5000) //After this time frame, we will restore all nodes back to how they used to look.
-                    .style("opacity", 1)
-                    .style("stroke", "#999");
+                console.log(group_attributes);
+
+                //nodeFilter holds the nodes that aren't connected to the input word
+                var selection = []; //selection holds the nodeFilter nodes so that we can check them in linkFilter
+                var nodeFilter =  nodes.filter(function(d,i){
+                      var count = 0;
+                      for( var p = 0; p <= d.group.length; p++){
+                             if( group_attributes.includes(d.group[p])){ count++;}
+                      }
+                      if( count === 0 ){
+                        selection.push(d.id);
+                        return d;
+                      }
+                 });
+
+                 //LinkFilter holds the links that aren't touched by the input word
+                 var linkFilter =  links.filter(function( d){
+                     if((selection.includes(d.target.id) || (selection.includes(d.source.id)))) { return d;}
+                 });
+
+                 //textFilter holds the text that isn't connected to the input word
+                 var textFilter =  texts.filter(function(d){
+                     if(selection.includes(d.id)) { return d; }
+                 });
+
+                nodeFilter.style("opacity", "0"); //Make other lines disappear
+                linkFilter.style("opacity", "0"); //Make other lines disappear
+                textFilter.style("opacity","0");
+
+          }
 
 
-
-
-      }
+          function clearSearch(){
+              d3.selectAll(".nodes, .links, .texts").transition()
+                  .duration(0) //After this time frame, we will restore all nodes back to how they used to look.
+                  .style("opacity", 1);
+              simulation.restart();
+          }
 
 </script>
 
